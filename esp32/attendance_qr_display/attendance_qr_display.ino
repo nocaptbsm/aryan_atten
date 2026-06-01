@@ -17,7 +17,9 @@
  * REQUIRED LIBRARIES (install via Arduino Library Manager):
  *   1. TFT_eSPI       by Bodmer
  *   2. ArduinoJson     by Benoit Blanchon (v7+)
- *   3. QRCode          by Richard Moore (ricmoo)
+ *
+ * QR CODE: Built-in! qrcode_gen.h/cpp in this sketch folder.
+ *          No external QR library needed.
  *
  * IMPORTANT — TFT_eSPI SETUP:
  *   After installing TFT_eSPI, you MUST edit the config file:
@@ -32,7 +34,7 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <TFT_eSPI.h>
-#include <qrcode.h>
+#include "qrcode_gen.h"
 
 // ============================================================
 // CONFIGURATION — EDIT THESE VALUES
