@@ -1,0 +1,21 @@
+{
+  "name": "attendance-backend",
+  "version": "1.0.0",
+  "description": "Session-based attendance system backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

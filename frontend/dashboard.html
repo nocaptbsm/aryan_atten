@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Live attendance dashboard — view real-time attendance records, stats, and search by student.">
+  <title>Attendance — Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+</head>
+<body>
+
+  <div class="container container--wide">
+    <!-- Header -->
+    <header class="page-header">
+      <span class="page-header__icon">📊</span>
+      <h1 class="page-header__title">Live Dashboard</h1>
+      <p class="page-header__subtitle">Real-time attendance monitoring</p>
+    </header>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid stagger">
+      <div class="stat-card">
+        <div id="stat-total" class="stat-card__value stat-card__value--blue">—</div>
+        <div class="stat-card__label">Registered</div>
+      </div>
+      <div class="stat-card">
+        <div id="stat-present" class="stat-card__value stat-card__value--emerald">—</div>
+        <div class="stat-card__label">Present Today</div>
+      </div>
+      <div class="stat-card">
+        <div id="stat-in-session" class="stat-card__value stat-card__value--purple">—</div>
+        <div class="stat-card__label">In Session</div>
+      </div>
+      <div class="stat-card">
+        <div id="stat-completed" class="stat-card__value stat-card__value--amber">—</div>
+        <div class="stat-card__label">Completed</div>
+      </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="search-bar">
+      <input
+        type="text"
+        id="dashboard-search"
+        class="form-input"
+        placeholder="🔍 Search by name or reg no..."
+        autocomplete="off"
+      >
+      <input
+        type="date"
+        id="dashboard-date"
+        class="form-input form-input--date"
+      >
+    </div>
+
+    <!-- Refresh Indicator -->
+    <div class="refresh-bar">
+      <span>
+        <span class="refresh-bar__dot"></span>
+        <span id="refresh-time">Loading...</span>
+      </span>
+      <span id="refresh-countdown">Next refresh in 30s</span>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="table-wrapper">
+      <table class="table" id="dashboard-table">
+        <thead>
+          <tr>
+            <th>Reg No</th>
+            <th>Name</th>
+            <th>Entry Time</th>
+            <th>Exit Time</th>
+            <th>Duration</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="dashboard-table-body">
+          <!-- Populated dynamically -->
+        </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div id="dashboard-table-empty" class="table-empty hidden">
+        <span class="table-empty__icon">📭</span>
+        <p>No attendance records found</p>
+        <p class="text-muted text-sm mt-4">Records will appear here as students scan the QR code</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center mt-8" style="padding-bottom: var(--space-8);">
+      <p class="text-muted text-sm">
+        <a href="/" style="color: var(--accent-blue); text-decoration: none;">📋 Back to Scan Page</a>
+      </p>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

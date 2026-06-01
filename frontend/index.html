@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="QR-based attendance system — scan the QR code to mark your entry and exit.">
+  <title>Attendance — Scan & Mark</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="page-header">
+      <span class="page-header__icon">📋</span>
+      <h1 class="page-header__title">Attendance</h1>
+      <p class="page-header__subtitle">Scan • Identify • Mark</p>
+    </header>
+
+    <!-- Step indicators -->
+    <div class="steps" aria-hidden="true">
+      <div class="step step--active"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- SECTION: Verifying Token        -->
+    <!-- ============================== -->
+    <section id="section-verifying" class="card">
+      <div class="loading-state">
+        <div class="spinner spinner--lg" style="color: var(--accent-blue);"></div>
+        <p class="loading-state__text">Verifying QR code...</p>
+        <p class="loading-state__text text-muted" style="font-size: 0.75rem;">Connecting to server. This may take a moment on first load.</p>
+      </div>
+    </section>
+
+    <!-- ============================== -->
+    <!-- SECTION: Identify Student       -->
+    <!-- ============================== -->
+    <section id="section-identify" class="card hidden">
+      <h2 class="card__title">
+        <span class="card__title-icon">🎓</span>
+        Identify Yourself
+      </h2>
+
+      <div class="form-group">
+        <label class="form-label" for="input-reg-no">Registration Number</label>
+        <input
+          type="text"
+          id="input-reg-no"
+          class="form-input"
+          placeholder="e.g. 21BCE1234"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          maxlength="20"
+          required
+        >
+        <p class="form-hint">Enter your university registration number</p>
+      </div>
+
+      <div id="identify-error" class="alert alert--error hidden" role="alert">
+        <span class="alert__icon">⚠️</span>
+        <span></span>
+      </div>
+
+      <button id="btn-identify" class="btn btn--primary btn--lg mt-4">
+        Continue
+      </button>
+    </section>
+
+    <!-- ============================== -->
+    <!-- SECTION: Register New Student   -->
+    <!-- ============================== -->
+    <section id="section-register" class="card hidden">
+      <h2 class="card__title">
+        <span class="card__title-icon">📝</span>
+        New Student Registration
+      </h2>
+
+      <p class="text-muted text-sm mb-6">First time? Register once and you're set for all future sessions.</p>
+
+      <div class="form-group">
+        <label class="form-label" for="reg-reg-no">Registration Number</label>
+        <input
+          type="text"
+          id="reg-reg-no"
+          class="form-input"
+          readonly
+          style="opacity: 0.7; cursor: not-allowed;"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="reg-name">Full Name</label>
+        <input
+          type="text"
+          id="reg-name"
+          class="form-input"
+          placeholder="e.g. Aryan Kumar"
+          autocomplete="name"
+          maxlength="100"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="reg-mobile">Mobile Number</label>
+        <input
+          type="tel"
+          id="reg-mobile"
+          class="form-input"
+          placeholder="e.g. 9876543210"
+          autocomplete="tel"
+          maxlength="15"
+          pattern="[0-9]{10,15}"
+          required
+        >
+      </div>
+
+      <div id="register-error" class="alert alert--error hidden" role="alert">
+        <span class="alert__icon">⚠️</span>
+        <span></span>
+      </div>
+
+      <button id="btn-register" class="btn btn--primary btn--lg mt-4">
+        ✨ Register & Continue
+      </button>
+    </section>
+
+    <!-- ============================== -->
+    <!-- SECTION: Mark Attendance        -->
+    <!-- ============================== -->
+    <section id="section-action" class="card hidden">
+      <h2 class="card__title">
+        <span class="card__title-icon">⏱️</span>
+        Mark Attendance
+      </h2>
+
+      <div class="summary stagger mb-6">
+        <div class="summary-row">
+          <span class="summary-row__label">Student</span>
+          <span id="action-student-name" class="summary-row__value"></span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-row__label">Reg No</span>
+          <span id="action-reg-no" class="summary-row__value" style="font-family: monospace;"></span>
+        </div>
+        <div id="action-entry-info" class="summary-row hidden">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+
+      <p id="action-next-label" class="text-muted text-sm text-center mb-6"></p>
+
+      <div id="action-error" class="alert alert--error hidden mb-4" role="alert">
+        <span class="alert__icon">⚠️</span>
+        <span></span>
+      </div>
+
+      <button id="btn-action" class="btn btn--success btn--lg">
+        📍 Mark Entry
+      </button>
+    </section>
+
+    <!-- ============================== -->
+    <!-- SECTION: Confirmation           -->
+    <!-- ============================== -->
+    <section id="section-confirm" class="card hidden">
+      <div class="confirmation">
+        <div id="confirm-icon" class="confirmation__icon confirmation__icon--entry">✅</div>
+        <h2 id="confirm-title" class="confirmation__title">Entry Marked!</h2>
+        <p id="confirm-message" class="confirmation__message"></p>
+      </div>
+
+      <div id="confirm-summary" class="summary stagger">
+        <!-- Filled dynamically -->
+      </div>
+    </section>
+
+    <!-- ============================== -->
+    <!-- SECTION: Error                  -->
+    <!-- ============================== -->
+    <section id="section-error" class="card hidden">
+      <div class="confirmation">
+        <div class="confirmation__icon" style="background: var(--accent-red-glow); border: 2px solid rgba(248, 113, 113, 0.3);">
+          ❌
+        </div>
+        <h2 id="error-title" class="confirmation__title">Something Went Wrong</h2>
+        <p id="error-message" class="confirmation__message"></p>
+      </div>
+
+      <a href="/" class="btn btn--ghost mt-4" style="text-decoration: none;">
+        ← Try Again
+      </a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center mt-8" style="padding-bottom: var(--space-8);">
+      <p class="text-muted text-sm">
+        <a href="dashboard.html" style="color: var(--accent-blue); text-decoration: none;">📊 View Dashboard</a>
+      </p>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
