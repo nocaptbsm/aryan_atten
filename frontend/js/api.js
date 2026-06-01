@@ -3,7 +3,7 @@
  * Designed to survive Render free-tier cold starts (up to ~30s).
  */
 
-const API_BASE = window.__API_BASE__ || 'http://localhost:3000';
+const API_BASE = window.__API_BASE__ || 'https://aryan-atten.onrender.com';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [1000, 2000, 4000]; // Exponential backoff in ms
