@@ -5,7 +5,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 // 90s gives enough runway for: Render cold-start (~50s) + ESP32 fetch + user scan + page load.
 // The ESP32 refreshes every 15s, so an active token is always much fresher than this in practice.
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '90s';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
+// Strip trailing slash so FRONTEND_URL="https://example.com/" doesn't produce "//token=..."
+const FRONTEND_URL = (process.env.FRONTEND_URL || 'http://localhost:5500').replace(/\/+$/, '');
 
 if (!JWT_SECRET) {
   console.error('Missing JWT_SECRET environment variable');

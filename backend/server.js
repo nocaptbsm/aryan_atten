@@ -11,7 +11,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- CORS ---
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
+// Strip trailing slash — env vars on Render are sometimes set with a trailing slash
+const FRONTEND_URL = (process.env.FRONTEND_URL || 'http://localhost:5500').replace(/\/+$/, '');
 
 // Build the allowed origins list from the FRONTEND_URL env var.
 // Supports comma-separated values, e.g. "https://foo.vercel.app,https://bar.vercel.app"
