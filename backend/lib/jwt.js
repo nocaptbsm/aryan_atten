@@ -2,7 +2,9 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRY = process.env.JWT_EXPIRY || '20s';
+// 90s gives enough runway for: Render cold-start (~50s) + ESP32 fetch + user scan + page load.
+// The ESP32 refreshes every 15s, so an active token is always much fresher than this in practice.
+const JWT_EXPIRY = process.env.JWT_EXPIRY || '90s';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
 
 if (!JWT_SECRET) {

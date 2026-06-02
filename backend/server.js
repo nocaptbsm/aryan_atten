@@ -12,11 +12,34 @@ const PORT = process.env.PORT || 3000;
 
 // --- CORS ---
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5500';
+
+// Build the allowed origins list from the FRONTEND_URL env var.
+// Supports comma-separated values, e.g. "https://foo.vercel.app,https://bar.vercel.app"
+const ALLOWED_ORIGINS = FRONTEND_URL
+  .split(',')
+  .map((u) => u.trim())
+  .filter(Boolean)
+  .concat(['http://localhost:5500', 'http://127.0.0.1:5500', 'http://localhost:3000']);
+
 app.use(
   cors({
-    origin: [FRONTEND_URL, 'http://localhost:5500', 'http://127.0.0.1:5500'],
-    methods: ['GET', 'POST'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g., ESP32 / Postman / health checks)
+      if (!origin) return callback(null, true);
+
+      // Allow any *.vercel.app subdomain automatically (handles preview deployments)
+      if (origin.endsWith('.vercel.app')) return callback(null, true);
+
+      // Allow explicitly configured origins
+      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+
+      // Reject everything else
+      console.warn(`CORS blocked: ${origin}`);
+      return callback(new Error(`CORS policy: origin '${origin}' is not allowed.`));
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type'],
+    optionsSuccessStatus: 204,
   })
 );
 

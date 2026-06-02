@@ -5,8 +5,10 @@
 
 const API_BASE = window.__API_BASE__ || 'https://aryan-atten.onrender.com';
 
-const MAX_RETRIES = 3;
-const RETRY_DELAYS = [1000, 2000, 4000]; // Exponential backoff in ms
+// Render free-tier cold starts can take 30–50s. We retry with exponential
+// backoff so the user is not prematurely shown a "server unreachable" error.
+const MAX_RETRIES = 5;
+const RETRY_DELAYS = [2000, 4000, 8000, 16000, 30000]; // up to ~60s total wait
 
 /**
  * Make an API request with automatic retries for retryable errors.
@@ -25,7 +27,10 @@ async function apiRequest(endpoint, options = {}) {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response = await fetch(url, config);
+      const response = await fetch(url, {
+        ...config,
+        signal: AbortSignal.timeout(25000), // 25s per-attempt timeout
+      });
       const data = await response.json();
 
       // If response is OK, return data
