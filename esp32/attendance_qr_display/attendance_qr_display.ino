@@ -48,7 +48,8 @@ const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 const char* API_BASE_URL  = "https://aryan-atten.onrender.com";
 
 // How often to refresh the QR code (milliseconds)
-const unsigned long QR_REFRESH_INTERVAL = 15000;  // 15 seconds
+// Must be less than the backend JWT_EXPIRY (60s) so the code is always fresh.
+const unsigned long QR_REFRESH_INTERVAL = 55000;  // 55 seconds (token valid for 60s)
 
 // Display dimensions
 const int SCREEN_WIDTH  = 240;
@@ -292,7 +293,7 @@ void handleFetchError(String reason) {
     // Max retries exhausted
     retryCount = 0;
     hasValidQR = false;
-    drawErrorScreen("Server Unreachable", reason, "Will retry in 15s");
+    drawErrorScreen("Server Unreachable", reason, "Will retry in 55s");
     lastRefreshTime = millis();  // Will retry on next interval
   }
 }
@@ -408,7 +409,7 @@ void drawCountdown(int seconds) {
   }
 
   tft.setTextSize(1);
-  String countdownText = "Refreshing in " + String(seconds) + "s";
+  String countdownText = "New code in " + String(seconds) + "s";
   tft.drawString(countdownText, SCREEN_WIDTH / 2, countdownY + 4);
 }
 
