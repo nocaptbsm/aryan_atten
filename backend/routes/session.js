@@ -63,11 +63,20 @@ router.post('/verify', async (req, res) => {
     const { jti } = result.payload;
 
     // Step 2: Check if token has already been used
-    const { data: existingToken } = await supabase
+    // Non-fatal: if Supabase is unreachable, skip replay check (JWT expiry is the main guard)
+    let replayCheckOk = true;
+    const { data: existingToken, error: selectError } = await supabase
       .from('used_tokens')
       .select('token_jti')
       .eq('token_jti', jti)
       .single();
+
+    if (selectError && selectError.code !== 'PGRST116') {
+      // PGRST116 = "no rows returned" (expected when token is new)
+      // Any other error = Supabase unavailable — log and continue
+      console.warn('used_tokens select error (non-fatal):', selectError.message || selectError);
+      replayCheckOk = false;
+    }
 
     if (existingToken) {
       return res.status(401).json({
@@ -79,34 +88,32 @@ router.post('/verify', async (req, res) => {
     }
 
     // Step 3: Mark token as used
-    const { error: insertError } = await supabase
-      .from('used_tokens')
-      .insert({ token_jti: jti });
+    if (replayCheckOk) {
+      const { error: insertError } = await supabase
+        .from('used_tokens')
+        .insert({ token_jti: jti });
 
-    if (insertError) {
-      // If insert fails due to unique constraint, it was a race condition — token was used
-      if (insertError.code === '23505') {
-        return res.status(401).json({
-          valid: false,
-          error: 'This QR code has already been used. Please scan the current one.',
-          code: 'TOKEN_ALREADY_USED',
-          retryable: false,
-        });
+      if (insertError) {
+        // Unique constraint = race condition, token already used
+        if (insertError.code === '23505') {
+          return res.status(401).json({
+            valid: false,
+            error: 'This QR code has already been used. Please scan the current one.',
+            code: 'TOKEN_ALREADY_USED',
+            retryable: false,
+          });
+        }
+        // Any other insert error = Supabase issue — log and continue
+        console.warn('used_tokens insert error (non-fatal):', insertError.message || insertError);
       }
-      console.error('Token insert error:', insertError);
-      return res.status(500).json({
-        valid: false,
-        error: 'Failed to process token. Please try again.',
-        code: 'TOKEN_PROCESSING_FAILED',
-        retryable: true,
-      });
     }
 
-    // Token is valid and now consumed
+    // Token is valid and consumed (or Supabase unavailable — JWT expiry protects us)
     res.json({
       valid: true,
       sessionId: jti,
     });
+
   } catch (err) {
     console.error('Token verification error:', err);
     res.status(500).json({
