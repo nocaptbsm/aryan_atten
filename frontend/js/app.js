@@ -120,10 +120,28 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const result = await API.verifyToken(token);
+    // Update the verifying UI text live as retries happen
+    const verifyingText = sections.verifying.querySelector('.loading-state__text');
+    const verifyingSubtext = sections.verifying.querySelector('.loading-state__text.text-muted');
+
+    function onRetry(attempt, max, message) {
+      if (verifyingText) verifyingText.textContent = message;
+      if (verifyingSubtext) {
+        verifyingSubtext.textContent = `Attempt ${attempt + 1} of ${max + 1} — keep this page open, the server is waking up.`;
+      }
+    }
+
+    const result = await API.verifyToken(token, onRetry);
 
     if (!result.ok) {
-      showError('Invalid QR Code', result.data?.error || 'The QR code is invalid or expired. Please scan the current one.');
+      const errCode = result.data?.code;
+      if (errCode === 'INVALID_TOKEN') {
+        showError('QR Code Expired', 'This QR code has expired. Please scan the current code on the device.');
+      } else if (errCode === 'TOKEN_ALREADY_USED') {
+        showError('Already Used', 'This QR code has already been used. Please scan the new code on the device.');
+      } else {
+        showError('Connection Failed', result.data?.error || 'Could not reach the server. Please check your internet connection and try again.');
+      }
       return;
     }
 
@@ -135,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showSection('identify', 1);
     regNoInput.focus();
   }
+
 
   // ===================================
   // STEP 2: Identify student

@@ -1,22 +1,24 @@
 /**
  * API Client — handles all backend communication with retry logic.
- * Designed to survive Render free-tier cold starts (up to ~30s).
+ * Designed to survive Render free-tier cold starts (up to ~50s).
  */
 
 const API_BASE = window.__API_BASE__ || 'https://aryan-atten.onrender.com';
 
-// Render free-tier cold starts can take 30–50s. We retry with exponential
-// backoff so the user is not prematurely shown a "server unreachable" error.
-const MAX_RETRIES = 5;
-const RETRY_DELAYS = [2000, 4000, 8000, 16000, 30000]; // up to ~60s total wait
+// Render free-tier cold starts can take 30–50s. We retry aggressively on
+// network errors with short delays so we catch the server as soon as it wakes.
+const MAX_RETRIES = 8;
+// Short delays: hit the server often so we don't miss the moment it wakes up.
+const RETRY_DELAYS = [2000, 3000, 4000, 5000, 5000, 5000, 5000, 5000]; // up to ~34s total
 
 /**
  * Make an API request with automatic retries for retryable errors.
  * @param {string} endpoint - API path (e.g., '/api/session/verify')
  * @param {object} options - Fetch options
+ * @param {function} [onRetry] - Called on each retry with (attempt, maxRetries, message)
  * @returns {Promise<object>} Parsed JSON response
  */
-async function apiRequest(endpoint, options = {}) {
+async function apiRequest(endpoint, options = {}, onRetry = null) {
   const url = `${API_BASE}${endpoint}`;
   const config = {
     headers: { 'Content-Type': 'application/json' },
@@ -29,7 +31,10 @@ async function apiRequest(endpoint, options = {}) {
     try {
       const response = await fetch(url, {
         ...config,
-        signal: AbortSignal.timeout(25000), // 25s per-attempt timeout
+        // 10s per-attempt timeout — Render wakes up within this window once
+        // the request hits the server, so short timeouts + many retries work
+        // better than a single long timeout that lets the token expire.
+        signal: AbortSignal.timeout(10000),
       });
       const data = await response.json();
 
@@ -41,25 +46,34 @@ async function apiRequest(endpoint, options = {}) {
       // If error is retryable and we have retries left
       if (data.retryable && attempt < MAX_RETRIES) {
         lastError = data;
-        await sleep(RETRY_DELAYS[attempt] || 4000);
+        if (onRetry) onRetry(attempt, MAX_RETRIES, 'Server is busy, retrying…');
+        await sleep(RETRY_DELAYS[attempt] || 5000);
         continue;
       }
 
       // Non-retryable error or out of retries
       return { ok: false, data, status: response.status };
     } catch (err) {
-      // Network error — likely cold start or connectivity issue
-      lastError = { error: 'Network error. The server may be waking up...', code: 'NETWORK_ERROR', retryable: true };
+      // Network error or timeout — Render cold-start in progress
+      lastError = {
+        error: 'Network error. The server may be waking up…',
+        code: 'NETWORK_ERROR',
+        retryable: true,
+      };
 
       if (attempt < MAX_RETRIES) {
-        await sleep(RETRY_DELAYS[attempt] || 4000);
+        if (onRetry) {
+          const elapsed = RETRY_DELAYS.slice(0, attempt).reduce((a, b) => a + b, 0) / 1000;
+          onRetry(attempt, MAX_RETRIES, `Server is waking up… (${Math.round(elapsed)}s)`);
+        }
+        await sleep(RETRY_DELAYS[attempt] || 5000);
         continue;
       }
 
       return {
         ok: false,
         data: {
-          error: 'Could not connect to the server. Please check your connection and try again.',
+          error: 'Could not connect to the server. Please check your connection and try again later.',
           code: 'NETWORK_ERROR',
           retryable: false,
         },
@@ -81,12 +95,14 @@ const API = {
   /**
    * Verify a scanned QR token.
    * @param {string} token - JWT from QR code
+   * @param {function} [onRetry] - Progress callback (attempt, max, message)
    */
-  async verifyToken(token) {
-    return apiRequest('/api/session/verify', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
-    });
+  async verifyToken(token, onRetry = null) {
+    return apiRequest(
+      '/api/session/verify',
+      { method: 'POST', body: JSON.stringify({ token }) },
+      onRetry
+    );
   },
 
   /**
